@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tp3_v2/presentation/widgets/app_scaffold.dart';
@@ -9,23 +8,8 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
-
-    if (user == null) {
-      return const AppScaffold(
-        title: 'Home',
-        showMenu: false,
-        body: Center(child: Text('Iniciá sesión para ver tus estadías activas')),
-      );
-    }
-
-    final displayName = (user.displayName?.isNotEmpty == true)
-        ? user.displayName!
-        : (user.email ?? 'Usuario');
-
     final activeQuery = FirebaseFirestore.instance
         .collection('tickets')
-        .where('userId', isEqualTo: user.uid)
         .where('status', isEqualTo: 'active');
 
     return AppScaffold(
@@ -35,24 +19,9 @@ class HomeScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Nombre del usuario
-            Text(
-              displayName,
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 20),
-
-            // Subtítulo
-            Text(
-              'Estadías activas',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w600),
-            ),
+            Text('Estadías activas',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
-
-            // Lista de tickets activos
             Expanded(
               child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
                 stream: activeQuery.snapshots(),
@@ -60,11 +29,17 @@ class HomeScreen extends StatelessWidget {
                   if (snap.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
                   }
-                  if (!snap.hasData || snap.data!.docs.isEmpty) {
+                  final docs = snap.data?.docs ?? [];
+                  if (docs.isEmpty) {
                     return const Center(child: Text('No hay estadías activas'));
                   }
 
-                  final docs = snap.data!.docs;
+                  // Ordenar por ingreso desc en cliente
+                  docs.sort((a, b) {
+                    final ta = (a.data()['ingreso'] as Timestamp).toDate();
+                    final tb = (b.data()['ingreso'] as Timestamp).toDate();
+                    return tb.compareTo(ta);
+                  });
 
                   return ListView.separated(
                     itemCount: docs.length,
@@ -81,7 +56,7 @@ class HomeScreen extends StatelessWidget {
 
                       return ListTile(
                         leading: const CircleAvatar(
-                          backgroundColor: Color(0xFFA5D6A7), // verde suave
+                          backgroundColor: Color(0xFFA5D6A7),
                           child: Icon(Icons.play_arrow, color: Colors.black),
                         ),
                         title: Text(plate),
@@ -96,11 +71,6 @@ class HomeScreen extends StatelessWidget {
             ),
           ],
         ),
-      ),
-      // FAB para ir a Scan
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => context.go('/scan'),
-        child: const Icon(Icons.qr_code_scanner),
       ),
     );
   }

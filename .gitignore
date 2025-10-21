@@ -84,3 +84,12 @@ windows/
 # ============================
 app.*.symbols
 app.*.map.json
+.dart_tool/
+build/
+.flutter-plugins-dependencies
+.packages
+.idea/
+.vscode/
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+**/firebase_options.dart
