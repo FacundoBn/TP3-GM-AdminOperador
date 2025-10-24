@@ -59,4 +59,20 @@ class UserModel {
       createdAt: DateTime.now(),
     );
   }
+
+  UserModel copyWith({
+  String? nombre,
+  String? apellido,
+  String? userName,
+  String? cuit,
+}) =>
+    UserModel(
+      uid: uid,
+      email: email,
+      nombre: nombre ?? this.nombre,
+      apellido: apellido ?? this.apellido,
+      userName: userName ?? this.userName,
+      cuit: cuit ?? this.cuit,
+      createdAt: createdAt,
+    );
 }
