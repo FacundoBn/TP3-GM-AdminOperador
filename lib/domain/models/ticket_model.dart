@@ -111,11 +111,9 @@ class Ticket {
 
   /// 🔹 Información mínima completa
   bool informacionMinima() {
-    return slotId != null &&
-           vehicleId != null &&
+    return vehicleId != null &&
            vehiclePlate != null && vehiclePlate!.isNotEmpty &&
-           slotGarageId != null && slotGarageId!.isNotEmpty &&
-           ingreso != null;
+           vehicleTipo != null;
   }
 
   @override

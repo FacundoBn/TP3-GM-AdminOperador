@@ -22,7 +22,7 @@ class Vehicle {
       uid: doc.id,
       plate: data['plate'] ?? '',
       userId: data['userId'],
-      tipo: _stringToVehicleType(data['tipo'] ?? 'auto'), // default auto
+      tipo: stringToVehicleType(data['tipo'] ?? 'auto'), // default auto
     );
   }
 
@@ -36,7 +36,7 @@ class Vehicle {
   }
 
   /// Helpers para convertir enum <-> string
-  static VehicleType _stringToVehicleType(String str) {
+  static VehicleType stringToVehicleType(String str) {
     switch (str) {
       case 'moto':
         return VehicleType.moto;

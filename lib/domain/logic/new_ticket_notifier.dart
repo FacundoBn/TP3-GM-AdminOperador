@@ -97,35 +97,54 @@ class NewTicketNotifier extends Notifier<Ticket?> {
     state = updated;
   }
 
-  /// 🔹 Ejemplo granular: actualizar solo algunos campos
+  // 🔹 Actualiza solo los campos provistos, dejando los demás intactos
   void updatePartial({
+    String? uid,
     String? vehicleId,
     String? userId,
+    String? guestId,
     String? slotId,
     DateTime? ingreso,
+    String? vehiclePlate,
+    String? vehicleTipo,
+    String? userNombre,
+    String? userApellido,
+    String? userEmail,
+    String? slotGarageId,
   }) {
     if (state == null) return;
     state = state!.copyWith(
-      vehicleId: vehicleId,
-      userId: userId,
-      slotId: slotId,
-      ingreso: ingreso,
+      uid: uid ?? state!.uid,
+      vehicleId: vehicleId ?? state!.vehicleId,
+      userId: userId ?? state!.userId,
+      guestId: guestId ?? state!.guestId,
+      slotId: slotId ?? state!.slotId,
+      ingreso: ingreso ?? state!.ingreso,
+      vehiclePlate: vehiclePlate ?? state!.vehiclePlate,
+      vehicleTipo: vehicleTipo ?? state!.vehicleTipo,
+      userNombre: userNombre ?? state!.userNombre,
+      userApellido: userApellido ?? state!.userApellido,
+      userEmail: userEmail ?? state!.userEmail,
+      slotGarageId: slotGarageId ?? state!.slotGarageId,
     );
   }
 
-  Future<void> checkSlotAvailableOrThrow() async {
-    final free = await _slotService.hasAvailableSlot();
-    if (!free) {
-      throw Exception('No hay cocheras libres');
+    Future<void> checkSlotAvailableOrThrow() async {
+      final free = await _slotService.hasAvailableSlot();
+      if (!free) {
+        throw Exception('No hay cocheras libres');
+      }
     }
-  }
 
   /// 🔹 Asignar cochera automáticamente (ejemplo placeholder)
   Future<void> assignSlot() async {
     if (state == null || state!.vehicleId==null || state!.vehicleId!.isEmpty) return;
     // TODO: usar slotService para obtener cochera disponible
     final slotId = await _slotService.assignFirstAvailableSlot(state!.vehicleId!);
-    state = state!.copyWith(slotId: slotId);
+    final slot = await _slotService.getSlotById(slotId);
+    
+    if (slotId != null && slotId.isNotEmpty)
+    {updatePartial(slotId: slotId, slotGarageId: slot.garageId ?? 'sin identificar');}
   }
 
   /// 🔹 Asociar un vehículo existente o crear uno nuevo
@@ -133,20 +152,66 @@ class NewTicketNotifier extends Notifier<Ticket?> {
     if (state == null) return;
     // TODO: buscar o crear vehículo usando vehicleService
     final fakeVehicleId = 'VEHICLE_XYZ';
-    state = state!.copyWith(vehicleId: fakeVehicleId);
+    updatePartial(vehicleId: fakeVehicleId);
   }
 
   /// 🔹 Confirmar ingreso (cierra la preparación y escribe en Firestore)
-  Future<void> confirmIngreso() async {
+  Future<String> confirmIngreso() async {
     if (state == null || !state!.informacionMinima()) {
       throw Exception('Datos incompletos para registrar ticket.');
+    }
+    if (state!.ingreso == null) {
+    state = state!.copyWith(ingreso: DateTime.now());
     }    
     final ref= await _ticketService.create(state!);
-    state = state!.copyWith(uid: ref);
+    updatePartial(uid: ref);
+    return ref;
   }
 
   /// 🔹 Resetear ticket actual (volver al estado nulo)
   void clear() {
     state = null;
+  }
+
+  Future<void> registerNewVehicle(String tipo) async {
+    debugPrint('newTicketNotifier.registerNewVehicle state antes de ejecutar ${state}');
+    if (state == null || state!.vehiclePlate == null) return;
+
+    try {
+      // 1️⃣ Crear el nuevo vehículo en Firestore
+      final newVehicle = Vehicle(
+        uid: null,
+        plate: state!.vehiclePlate!,
+        tipo: Vehicle.stringToVehicleType(tipo),
+        userId: null, // por ahora sin usuario
+      );
+
+      final newVehicleId = await _vehicleService.addVehicle(newVehicle);
+
+      // 2️⃣ Actualizar el ticket actual
+      updatePartial(
+        vehicleId: newVehicleId,
+        vehicleTipo: tipo,
+        userId: null,
+      );
+
+      debugPrint('Vehículo creado y asignado al ticket: $newVehicleId');
+
+    } catch (e, st) {
+      debugPrint('Error al registrar vehículo: $e\n$st');
+      // Mostrar feedback en pantalla
+      // ScaffoldMessenger.of(globalContext!).showSnackBar(
+      //   SnackBar(content: Text('Error al registrar vehículo: $e')),
+      // );
+    }
+  }
+
+  Future<void> assignUser(String userUid) async {
+    try{
+    await _vehicleService.assignUser(state!.vehicleId!, userUid);
+    debugPrint('usuario asignado a Ticket: state: ${state}');
+    } catch(e,st){
+      debugPrint ('Error asignando usuario: ${e} - stack: $st');
+    }
   }
 }

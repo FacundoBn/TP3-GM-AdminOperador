@@ -52,4 +52,9 @@ class SlotService {
   Future<void> releaseSlot(String slotId) async {
     await _firestore.collection('slots').doc(slotId).update({'vehicleId': null});
   }
+
+  Future <Slot> getSlotById(String slotId) async{
+   final doc = await _firestore.collection('slots').doc(slotId).get();
+   return Slot.fromFirestore(doc);
+  }
 }

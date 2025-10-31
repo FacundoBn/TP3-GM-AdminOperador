@@ -95,11 +95,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
       GoRoute(
         path: '/newTicket',
+        redirect: (context, state) {
+          final plate = state.extra is String ? state.extra as String : null;
+          return plate == null ? '/scan' : null;
+        },
         builder: (_, state) {
-          final plate = (state.extra is String && (state.extra as String).isNotEmpty)
-                        ? state.extra as String
-                        : null;
-          if (plate==null) return const ScanScreen();
+          final plate = state.extra as String;
           return NewTicketScreen(plate: plate);
         },
       ),
