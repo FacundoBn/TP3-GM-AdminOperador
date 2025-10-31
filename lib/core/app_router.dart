@@ -96,7 +96,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/newTicket',
         builder: (_, state) {
-          final plate = state.extra  as String;
+          final plate = (state.extra is String && (state.extra as String).isNotEmpty)
+                        ? state.extra as String
+                        : null;
+          if (plate==null) return const ScanScreen();
           return NewTicketScreen(plate: plate);
         },
       ),
