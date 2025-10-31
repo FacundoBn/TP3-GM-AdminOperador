@@ -34,14 +34,14 @@ bool _isValidPlate(String input) {
 
 /// Crea o devuelve un ticket activo para la patente dada.
 /// tickets: { plate, userId, ingreso, egreso, precioFinal, status, slotId }
-Future<String> _startOrGetActive({
+Future<String?> _startOrGetActive({
   required String plate,
   required String userId,
-}) async {
+  }) async {
   final db = FirebaseFirestore.instance;
   final norm = _normalizePlate(plate);
 
-  // buscar activo existente
+  // Buscar ticket activo existente
   final q = await db
       .collection('tickets')
       .where('plate', isEqualTo: norm)
@@ -49,21 +49,14 @@ Future<String> _startOrGetActive({
       .limit(1)
       .get();
 
-  if (q.docs.isNotEmpty) return q.docs.first.id;
+  if (q.docs.isNotEmpty) {
+    return q.docs.first.id; // Retorna id del ticket activo
+  }
 
-  // crear nuevo
-  final now = DateTime.now().toUtc();
-  final ref = await db.collection('tickets').add({
-    'plate': norm,
-    'userId': userId,
-    'ingreso': Timestamp.fromDate(now),
-    'egreso': null,
-    'precioFinal': null,
-    'status': 'active',
-    'slotId': null,
-  });
-  return ref.id;
+  // No hay ticket activo
+  return null;
 }
+
 
 /* =================================== UI =================================== */
 
@@ -103,15 +96,22 @@ class _ScanScreenState extends ConsumerState<ScanScreen>
     }
 
     setState(() => _saving = true);
-    try {
-      final ticketId = await _startOrGetActive(plate: plate, userId: user.uid);
-      if (mounted) {
-        context.go('/active', extra: ticketId); // redirige a la ruta activa
-      }
+      try {
+        final ticketId = await _startOrGetActive(plate: plate, userId: user.uid);
+
+        if (!mounted) return;
+
+        if (ticketId != null) {
+          // Existe ticket activo → redirigir a pantalla activa
+          context.go('/active', extra: ticketId);
+          } else {
+          // No hay ticket activo → iniciar flujo de nuevo ticket
+          context.go('/newTicket', extra: plate);
+          }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error guardando: $e')),
+          SnackBar(content: Text('Error verificando ticket: $e')),
         );
       }
     } finally {

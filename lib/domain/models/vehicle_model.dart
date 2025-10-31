@@ -5,13 +5,13 @@ enum VehicleType { moto, auto, camioneta }
 class Vehicle {
   final String? uid;        // ID generado por Firestore
   final String plate;      // Patente
-  final String? userUid;   // ID del usuario dueño (nullable)
+  final String? userId;   // ID del usuario dueño (nullable)
   final VehicleType tipo;  // Tipo de vehículo
 
   Vehicle({
     this.uid,
     required this.plate,
-    this.userUid,
+    this.userId,
     required this.tipo,
   });
 
@@ -21,7 +21,7 @@ class Vehicle {
     return Vehicle(
       uid: doc.id,
       plate: data['plate'] ?? '',
-      userUid: data['userUid'],
+      userId: data['userId'],
       tipo: _stringToVehicleType(data['tipo'] ?? 'auto'), // default auto
     );
   }
@@ -30,8 +30,8 @@ class Vehicle {
   Map<String, dynamic> toFirestore() {
     return {
       'plate': plate,
-      if (userUid != null) 'userUid': userUid,
-      'tipo': _vehicleTypeToString(tipo),
+      if (userId != null) 'userId': userId,
+      'tipo': vehicleTypeToString(tipo),
     };
   }
 
@@ -49,7 +49,7 @@ class Vehicle {
     }
   }
 
-  static String _vehicleTypeToString(VehicleType tipo) {
+  static String vehicleTypeToString(VehicleType tipo) {
     switch (tipo) {
       case VehicleType.moto:
         return 'moto';

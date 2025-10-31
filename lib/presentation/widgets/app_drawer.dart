@@ -31,7 +31,7 @@ class AppDrawer extends ConsumerWidget {
                 ListTile(
                   leading: const Icon(Icons.home),
                   title: const Text('Inicio'),
-                  onTap: () => context.go('/'),
+                  onTap: () => context.go('/home'),
                 ),
 
                 ListTile(

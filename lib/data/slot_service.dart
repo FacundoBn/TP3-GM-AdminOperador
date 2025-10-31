@@ -5,6 +5,17 @@ import 'package:tp3_v2/domain/models/slot_model.dart';
 class SlotService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  Future<bool> hasAvailableSlot() async {
+    final querySnapshot = await _firestore
+        .collection('slots')
+        .where('vehicleId', isNull: true)
+        .limit(1)
+        .get();
+
+    return querySnapshot.docs.isNotEmpty;
+  }
+
+
   /// 🔹 Traer todos los slots (reactivo)
   Stream<List<Slot>> fetchSlots() {
     return _firestore.collection('slots').snapshots().map(

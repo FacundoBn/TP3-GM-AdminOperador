@@ -8,6 +8,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 // Pantallas (ajustá los imports si tu paquete no es tp3_v2)
 import 'package:tp3_v2/presentation/screens/login_screen.dart';
+import 'package:tp3_v2/presentation/screens/new_ticket_screen.dart';
 import 'package:tp3_v2/presentation/screens/register_screen.dart';
 import 'package:tp3_v2/presentation/screens/home_screen.dart';
 import 'package:tp3_v2/presentation/screens/history_screen.dart';
@@ -89,6 +90,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (_, state) {
           final ticketId = state.extra is String ? state.extra as String : null;
           return ActiveSessionScreen(ticketId: ticketId, readOnly: false);
+        },
+      ),
+
+      GoRoute(
+        path: '/newTicket',
+        builder: (_, state) {
+          final plate = state.extra  as String;
+          return NewTicketScreen(plate: plate);
         },
       ),
 
