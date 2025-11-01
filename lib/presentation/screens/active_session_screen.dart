@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:tp3_v2/data/slot_service.dart';
 import 'package:tp3_v2/presentation/widgets/app_scaffold.dart';
 
 class ActiveSessionScreen extends StatelessWidget {
@@ -36,12 +37,12 @@ class ActiveSessionScreen extends StatelessWidget {
         }
 
         final d = snap.data!.data()!;
-        final plate = (d['plate'] ?? '') as String;
-        final status = (d['status'] ?? '') as String; // 'active' | 'closed'
+        final plate = (d['vehiclePlate'] ?? '') as String;
+        final status = (d['egreso'] == null); // 'active' | 'closed'
         final ingreso = (d['ingreso'] as Timestamp).toDate();
         final egreso = d['egreso'] != null ? (d['egreso'] as Timestamp).toDate() : null;
         final precio = d['precioFinal'];
-        final isActive = status == 'active';
+        final isActive = status;
 
         final duration = DateTime.now().toUtc().difference(ingreso.toUtc());
         final hh = duration.inHours.toString().padLeft(2, '0');
@@ -108,6 +109,15 @@ class ActiveSessionScreen extends StatelessWidget {
                         'precioFinal': amount,
                         'status': 'closed',
                       });
+                      // como obtengo info del Ticket aqui?
+                      // como llamo a _slotService o slotServiceProvider.releaseSlor(ticketSlotId) 
+                      final d = snap.data!.data()!;
+                      final ticketSlotId = d['slotId'] as String;
+                      final slotService = SlotService();
+                      
+                      if(ticketSlotId != null && ticketSlotId.isNotEmpty){
+                        await slotService.releaseSlot(ticketSlotId);
+                      }
 
                       if (context.mounted) context.go('/history');
                     },

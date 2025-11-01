@@ -9,7 +9,7 @@ class TicketService {
   Future<String> create(Ticket ticket) async {
     debugPrint('tiket_service: create: ${ticket.toString()}');
     final ref = _firestore.collection('tickets').doc();
-    await ref.set(ticket.toFirestore());
+    await ref.set(ticket.toFirestore(), SetOptions(merge: false));
     return ref.id;
   }
 

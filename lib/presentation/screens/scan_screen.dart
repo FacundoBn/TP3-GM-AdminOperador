@@ -44,8 +44,8 @@ Future<String?> _startOrGetActive({
   // Buscar ticket activo existente
   final q = await db
       .collection('tickets')
-      .where('plate', isEqualTo: norm)
-      .where('status', isEqualTo: 'active')
+      .where('vehiclePlate', isEqualTo: norm)
+      .where('egreso', isNull: true)
       .limit(1)
       .get();
 

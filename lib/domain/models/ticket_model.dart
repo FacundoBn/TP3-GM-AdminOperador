@@ -64,7 +64,7 @@ class Ticket {
       if (guestId != null) 'guestId': guestId,
       'slotId': slotId,
       'ingreso': Timestamp.fromDate(ingreso!),
-      if (egreso != null) 'egreso': Timestamp.fromDate(egreso!),
+      'egreso': egreso != null ? Timestamp.fromDate(egreso!) : null,
       if (precioFinal != null) 'precioFinal': precioFinal,
       // 🔹 Datos redundantes
       'vehiclePlate': vehiclePlate,

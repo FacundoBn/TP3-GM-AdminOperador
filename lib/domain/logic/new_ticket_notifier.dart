@@ -50,6 +50,7 @@ class NewTicketNotifier extends Notifier<Ticket?> {
 
     // 2️⃣ Inicializar state parcial con la patente
     state = Ticket(
+      egreso:null,
       vehiclePlate: plate,
       ingreso: null,
       slotId: null,
@@ -105,6 +106,7 @@ class NewTicketNotifier extends Notifier<Ticket?> {
     String? guestId,
     String? slotId,
     DateTime? ingreso,
+    DateTime? egreso,
     String? vehiclePlate,
     String? vehicleTipo,
     String? userNombre,
@@ -120,6 +122,7 @@ class NewTicketNotifier extends Notifier<Ticket?> {
       guestId: guestId ?? state!.guestId,
       slotId: slotId ?? state!.slotId,
       ingreso: ingreso ?? state!.ingreso,
+      egreso: egreso ?? state!.egreso,
       vehiclePlate: vehiclePlate ?? state!.vehiclePlate,
       vehicleTipo: vehicleTipo ?? state!.vehicleTipo,
       userNombre: userNombre ?? state!.userNombre,
