@@ -35,7 +35,7 @@ class HistoryScreen extends StatelessWidget {
             separatorBuilder: (_, __) => const Divider(height: 0),
             itemBuilder: (context, i) {
               final d = docs[i].data();
-              final plate = (d['plate'] ?? '') as String;
+              final plate = (d['vehiclePlate'] ?? '') as String;
               final ingreso = (d['ingreso'] as Timestamp).toDate();
               final egreso = d['egreso'] != null ? (d['egreso'] as Timestamp).toDate() : null;
               final price = d['precioFinal'];

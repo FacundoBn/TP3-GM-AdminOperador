@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 import 'package:tp3_v2/domain/models/vehicle_model.dart';
 
 
@@ -15,7 +16,7 @@ class VehicleService {
   Stream<List<Vehicle>> fetchVehiclesForUser(String userUid) {
     return _firestore
         .collection('vehicles')
-        .where('userUid', isEqualTo: userUid)
+        .where('userId', isEqualTo: userUid)
         .snapshots()
         .map((snapshot) => snapshot.docs.map((doc) => Vehicle.fromFirestore(doc)).toList());
   }
@@ -26,11 +27,29 @@ class VehicleService {
     final userDoc = await _firestore.collection('users').doc(userUid).get();
     if (!userDoc.exists) throw Exception('Usuario no encontrado');
 
-    await _firestore.collection('vehicles').doc(vehicleUid).update({'userUid': userUid});
+    await _firestore.collection('vehicles').doc(vehicleUid).update({'userId': userUid});
   }
 
   /// 🔹 Eliminar un vehicle
   Future<void> deleteVehicle(String vehicleUid) async {
     await _firestore.collection('vehicles').doc(vehicleUid).delete();
+  }
+
+  Future <Vehicle?>findByPlate (String plate) async {
+    try{
+      final query = await _firestore
+                      .collection('vehicles')
+                      .where('plate',isEqualTo: plate)
+                      .limit(1)
+                      .get();
+
+    if (query.docs.isEmpty) return null;
+
+    final doc = query.docs.first;
+    return Vehicle.fromFirestore(doc);
+    } catch (e, st){
+      debugPrint('Error en VehicleService.findByPlate ${e.toString()}');
+      return null;
+    }                 
   }
 }

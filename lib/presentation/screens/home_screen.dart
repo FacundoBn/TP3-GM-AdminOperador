@@ -10,7 +10,10 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final activeQuery = FirebaseFirestore.instance
         .collection('tickets')
-        .where('status', isEqualTo: 'active');
+        //.where('status', isEqualTo: 'active');
+        .where('egreso', isNull: true);
+
+    
 
     return AppScaffold(
       title: 'Home',
@@ -47,7 +50,7 @@ class HomeScreen extends StatelessWidget {
                     itemBuilder: (context, i) {
                       final d = docs[i].data();
                       final id = docs[i].id;
-                      final plate = (d['plate'] ?? '') as String;
+                      final plate = (d['vehiclePlate'] ?? '') as String;
                       final ingreso = (d['ingreso'] as Timestamp).toDate();
 
                       final dur = DateTime.now().toUtc().difference(ingreso.toUtc());
