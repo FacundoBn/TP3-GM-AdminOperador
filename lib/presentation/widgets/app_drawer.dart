@@ -7,6 +7,12 @@ import 'package:tp3_v2/domain/logic/role_provider.dart';
 class AppDrawer extends ConsumerWidget {
   const AppDrawer({super.key});
 
+  void _nav(BuildContext context, String path) {
+    // cierra el drawer antes de navegar
+    Navigator.of(context).pop();
+    context.go(path);
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final rolesAsync = ref.watch(currentUserRolesProvider);
@@ -18,9 +24,8 @@ class AppDrawer extends ConsumerWidget {
           error: (e, _) => Center(child: Text('Error: $e')),
           data: (roles) {
             final isAdmin = roles.contains('admin');
-            // Podés agregar otras reglas según 'operador' o 'cliente'
-            final canSeeRrhh = isAdmin;                  // ocultar si NO es admin
-            final canSeeConfigEst = isAdmin;             // ocultar si NO es admin
+            final canSeeRrhh = isAdmin;
+            final canSeeConfigEst = isAdmin;
 
             return ListView(
               children: [
@@ -31,31 +36,31 @@ class AppDrawer extends ConsumerWidget {
                 ListTile(
                   leading: const Icon(Icons.home),
                   title: const Text('Inicio'),
-                  onTap: () => context.go('/home'),
+                  onTap: () => _nav(context, '/home'),
                 ),
 
                 ListTile(
                   leading: const Icon(Icons.qr_code_scanner),
                   title: const Text('Escanear'),
-                  onTap: () => context.go('/scan'),
+                  onTap: () => _nav(context, '/scan'),
                 ),
 
                 if (canSeeRrhh) ListTile(
                   leading: const Icon(Icons.group),
                   title: const Text('RRHH'),
-                  onTap: () => context.go('/rrhh'),
+                  onTap: () => _nav(context, '/rrhh'),
                 ),
 
                 if (canSeeConfigEst) ListTile(
                   leading: const Icon(Icons.settings),
                   title: const Text('Config Estacionamiento'),
-                  onTap: () => context.go('/config-est'),
+                  onTap: () => _nav(context, '/config'), // ruta que definiste
                 ),
 
                 ListTile(
                   leading: const Icon(Icons.history),
                   title: const Text('Historial'),
-                  onTap: () => context.go('/historial'),
+                  onTap: () => _nav(context, '/historial'),
                 ),
 
                 const Divider(),
