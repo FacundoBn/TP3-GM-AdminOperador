@@ -1,5 +1,3 @@
-import 'dart:js_interop';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -17,138 +15,304 @@ class NewTicketScreen extends ConsumerStatefulWidget {
 
 class _NewTicketScreenState extends ConsumerState<NewTicketScreen> {
   bool assignUser = false; // controla si se despliega AssignDriverSection
+  bool _searching = false;
+  bool _confirming = false;
 
   @override
   Widget build(BuildContext context) {
     final ticketState = ref.watch(newTicketNotifierProvider);
+    final theme = Theme.of(context);
+
+    final canConfirm = ticketState?.informacionMinima() ?? false;
 
     return AppScaffold(
       title: 'Nuevo Ticket',
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            // 1️⃣ Mostrar placa
-            Text('Patente: ${widget.plate}', style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 16),
-
-            // 2️⃣ Botón "Iniciar Ticket / Continuar"
-            ElevatedButton(
-              onPressed: () async {
-                try {
-                  await ref.read(newTicketNotifierProvider.notifier)
-                      .startNewTicket(plate: widget.plate, context: context);
-                } catch (e, st) {
-                  debugPrint('Error al iniciar ticket: $e\n$st');
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error al iniciar ticket: $e')),
-                  );
-                }
-              },
-              child: const Text('BUSCAR'),
-            ),
-            const SizedBox(height: 16),
-
-            // 3️⃣ Sección Vehículo
-            if (ticketState?.vehicleId != null) ...[
-              Text('Vehículo: ${ticketState!.vehicleTipo ?? "-"}'),
-              Text('ID Vehículo: ${ticketState.vehicleId ?? "-"}'),
-            ] else ...[
-              const Text(
-                'No se encontró un vehículo con esta patente.',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Text('Patente: ${ticketState?.vehiclePlate ?? "-"}'),
-              const SizedBox(height: 16),
-              const Text('Seleccione tipo de vehículo:'),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                children: [
-                  for (final tipo in ['auto', 'moto', 'camioneta'])
-                    ChoiceChip(
-                      label: Text(tipo),
-                      selected: ticketState?.vehicleTipo == tipo,
-                      onSelected: (v) async {
-                        if (v) {
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 720),
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              // PLACA + BUSCAR
+              _SectionCard(
+                icon: Icons.directions_car,
+                title: 'Patente',
+                trailing: FilledButton.icon(
+                  onPressed: _searching
+                      ? null
+                      : () async {
+                          setState(() => _searching = true);
                           try {
                             await ref
                                 .read(newTicketNotifierProvider.notifier)
-                                .registerNewVehicle(tipo);
+                                .startNewTicket(plate: widget.plate, context: context);
                           } catch (e, st) {
-                            debugPrint('Error al registrar vehículo: $e\n$st');
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Error al registrar vehículo: $e')),
-                            );
+                            debugPrint('Error al iniciar ticket: $e\n$st');
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Error al iniciar ticket: $e')),
+                              );
+                            }
+                          } finally {
+                            if (mounted) setState(() => _searching = false);
                           }
-                        }
-                      },
+                        },
+                  icon: _searching
+                      ? const SizedBox(
+                          width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(Icons.search),
+                  label: Text(_searching ? 'Buscando...' : 'BUSCAR'),
+                ),
+                child: SelectableText(
+                  widget.plate,
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              // VEHÍCULO
+              if (ticketState?.vehicleId != null)
+                _SectionCard(
+                  icon: Icons.local_taxi,
+                  title: 'Vehículo detectado',
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _KV('Tipo', ticketState!.vehicleTipo ?? '-'),
+                      const SizedBox(height: 6),
+                      _KV('ID Vehículo', ticketState.vehicleId ?? '-'),
+                      const SizedBox(height: 12),
+                      if (ticketState.userId == null)
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: OutlinedButton.icon(
+                            onPressed: () => setState(() => assignUser = !assignUser),
+                            icon: const Icon(Icons.person_add_alt_1),
+                            label: Text(assignUser ? 'Ocultar asignación' : 'Asignar usuario'),
+                          ),
+                        ),
+                    ],
+                  ),
+                )
+              else
+                _SectionCard(
+                  icon: Icons.help_outline,
+                  title: 'Vehículo no registrado',
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'No se encontró un vehículo con esta patente.',
+                        style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(height: 8),
+                      _KV('Patente', ticketState?.vehiclePlate ?? widget.plate),
+                      const SizedBox(height: 12),
+                      Text('Seleccioná el tipo de vehículo:', style: theme.textTheme.labelLarge),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          for (final tipo in ['auto', 'moto', 'camioneta'])
+                            ChoiceChip(
+                              label: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                child: Text(tipo),
+                              ),
+                              avatar: Icon(
+                                tipo == 'auto'
+                                    ? Icons.directions_car
+                                    : tipo == 'moto'
+                                        ? Icons.two_wheeler
+                                        : Icons.local_shipping,
+                                size: 18,
+                              ),
+                              selected: ticketState?.vehicleTipo == tipo,
+                              onSelected: (v) async {
+                                if (!v) return;
+                                try {
+                                  await ref
+                                      .read(newTicketNotifierProvider.notifier)
+                                      .registerNewVehicle(tipo);
+                                } catch (e, st) {
+                                  debugPrint('Error al registrar vehículo: $e\n$st');
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Error al registrar vehículo: $e')),
+                                    );
+                                  }
+                                }
+                              },
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+              const SizedBox(height: 12),
+
+              // ASIGNAR USUARIO (opcional)
+              if (assignUser && ticketState != null)
+                _SectionCard(
+                  icon: Icons.person_search,
+                  title: 'Asignar usuario al vehículo',
+                  child: const AssignDriverSection(),
+                ),
+
+              const SizedBox(height: 12),
+
+              // USUARIO ASOCIADO (si existe)
+              if (ticketState?.userId != null)
+                _SectionCard(
+                  icon: Icons.person,
+                  title: 'Usuario asociado',
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _KV('Nombre',
+                          '${ticketState!.userNombre ?? "-"} ${ticketState.userApellido ?? "-"}'),
+                      const SizedBox(height: 6),
+                      _KV('Email', ticketState.userEmail ?? '-'),
+                    ],
+                  ),
+                ),
+
+              const SizedBox(height: 16),
+
+              // ACCIÓN: CONFIRMAR
+              Row(
+                children: [
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: !canConfirm || _confirming
+                          ? null
+                          : () async {
+                              setState(() => _confirming = true);
+                              try {
+                                await ref
+                                    .read(newTicketNotifierProvider.notifier)
+                                    .assignSlot();
+
+                                await ref
+                                    .read(newTicketNotifierProvider.notifier)
+                                    .confirmIngreso();
+
+                                if (!mounted) return;
+
+                                // limpiar estado
+                                ref.read(newTicketNotifierProvider.notifier).clear();
+
+                                // ir al home
+                                context.go('/home');
+                              } catch (e, st) {
+                                debugPrint('Error al confirmar ticket: $e\n$st');
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('Error al confirmar ticket: $e')),
+                                  );
+                                }
+                              } finally {
+                                if (mounted) setState(() => _confirming = false);
+                              }
+                            },
+                      icon: _confirming
+                          ? const SizedBox(
+                              width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Icon(Icons.check_circle),
+                      label: Text(_confirming ? 'Confirmando...' : 'Confirmar Ingreso'),
                     ),
+                  ),
                 ],
               ),
+              const SizedBox(height: 12),
+              if (!canConfirm)
+                Text(
+                  'Completá los datos mínimos para habilitar el ingreso.',
+                  style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.tertiary),
+                ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
 
-            if (ticketState?.vehicleId != null && ticketState?.userId == null) ...[
-              FilledButton(
-                onPressed: () {
-                  setState(() {
-                    assignUser = !assignUser;
-                  });
-                },
-                child: const Text('Asignar usuario'),
-              ),
-            ],
+/// Tarjeta seccional reutilizable con icono y título
+class _SectionCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final Widget child;
+  final Widget? trailing;
 
-            const SizedBox(height: 16),
+  const _SectionCard({
+    required this.icon,
+    required this.title,
+    required this.child,
+    this.trailing,
+  });
 
-            if (assignUser && ticketState != null) ...[
-              AssignDriverSection(),
-            ],
-
-            // 4️⃣ Sección Usuario asociado al vehículo
-            if (ticketState?.userId != null) ...[
-              Text('Usuario: ${ticketState!.userNombre ?? "-"} ${ticketState.userApellido ?? "-"}'),
-              Text('Email: ${ticketState.userEmail ?? "-"}'),
-            ],
-            const SizedBox(height: 16),
-
-            // 5️⃣ Botón Confirmar (habilitado solo si state.informacionMinima)
-            ElevatedButton(
-              onPressed: ticketState?.informacionMinima() ?? false
-                  ? () async {
-                      try {
-                        await ref.read(newTicketNotifierProvider.notifier).assignSlot();
-
-                        // if (ticketState?.ingreso == null) {
-                        //   await ref
-                        //       .read(newTicketNotifierProvider.notifier)
-                        //       .updatePartial(ingreso: DateTime.now());
-                        // }
-
-                        await ref.read(newTicketNotifierProvider.notifier).confirmIngreso();
-
-                        if (!mounted) return;
-
-                        // Limpiar estado
-                        ref.read(newTicketNotifierProvider.notifier).clear();
-
-                        // Redirigir a home
-                        context.go('/home');
-                      } catch (e, st) {
-                        debugPrint('Error al confirmar ticket: $e\n$st');
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Error al confirmar ticket: $e')),
-                        );
-                      }
-                    }
-                  : null,
-              child: const Text('Confirmar Ingreso'),
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      elevation: 0,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 16,
+                  backgroundColor: theme.colorScheme.primary.withOpacity(.12),
+                  child: Icon(icon, size: 18, color: theme.colorScheme.primary),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                  ),
+                ),
+                if (trailing != null) trailing!,
+              ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
+            child,
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Key-Value en una fila
+class _KV extends StatelessWidget {
+  final String k;
+  final String v;
+  const _KV(this.k, this.v);
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      children: [
+        SizedBox(
+          width: 120,
+          child: Text(k, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
+        ),
+        Expanded(child: Text(v, style: theme.textTheme.bodyMedium)),
+      ],
     );
   }
 }
