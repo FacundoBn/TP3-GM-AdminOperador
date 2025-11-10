@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:tp3_v2/presentation/widgets/app_scaffold.dart';
 
 class HistoryScreen extends StatelessWidget {
@@ -34,10 +35,13 @@ class HistoryScreen extends StatelessWidget {
             itemCount: docs.length,
             separatorBuilder: (_, __) => const Divider(height: 0),
             itemBuilder: (context, i) {
-              final d = docs[i].data();
+              final doc = docs[i];
+              final d = doc.data();
               final plate = (d['vehiclePlate'] ?? '') as String;
               final ingreso = (d['ingreso'] as Timestamp).toDate();
-              final egreso = d['egreso'] != null ? (d['egreso'] as Timestamp).toDate() : null;
+              final egreso = d['egreso'] != null
+                  ? (d['egreso'] as Timestamp).toDate()
+                  : null;
               final price = d['precioFinal'];
 
               return ListTile(
@@ -45,10 +49,13 @@ class HistoryScreen extends StatelessWidget {
                   backgroundColor: Colors.blueAccent,
                   child: Icon(Icons.receipt_long, color: Colors.white),
                 ),
-                title: Text(plate),
-                subtitle: Text('De ${ingreso.toLocal()} a ${egreso?.toLocal() ?? '-'} • \$${(price ?? 0).toStringAsFixed(2)}'),
+                title: Text(plate.isEmpty ? 'Ticket $i' : plate),
+                subtitle: Text(
+                  'De ${ingreso.toLocal()} a ${egreso?.toLocal() ?? '-'} • \$${(price ?? 0).toStringAsFixed(2)}',
+                ),
                 onTap: () {
-                  // futuro: comprobante / detalle
+                  // redirige al detalle usando el id
+                  context.push('/ticket/${doc.id}');
                 },
               );
             },

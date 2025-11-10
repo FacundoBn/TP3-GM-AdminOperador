@@ -60,7 +60,7 @@ class AppDrawer extends ConsumerWidget {
                 ListTile(
                   leading: const Icon(Icons.history),
                   title: const Text('Historial'),
-                  onTap: () => _nav(context, '/historial'),
+                  onTap: () => _nav(context, '/history'),
                 ),
 
                 const Divider(),

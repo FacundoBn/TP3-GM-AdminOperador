@@ -17,6 +17,7 @@ import 'package:tp3_v2/presentation/screens/active_session_screen.dart';
 import 'package:tp3_v2/presentation/screens/mis_datos_screen.dart';
 import 'package:tp3_v2/presentation/screens/rrhh_screen.dart';
 import 'package:tp3_v2/presentation/screens/config_establecimiento_screen.dart';
+import 'package:tp3_v2/presentation/screens/ticket_detail_screen.dart';
 
 /// Notifier para refrescar GoRouter cuando cambia el stream (ej: authStateChanges)
 class GoRouterRefreshStream extends ChangeNotifier {
@@ -60,8 +61,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // 🔒 VALIDACIÓN DE ROLES — DESACTIVADA POR AHORA
       /*
       if (isAuth) {
-        // Final: cuando quieras reactivar, descomentá y agregá:
-        // import 'package:cloud_firestore/cloud_firestore.dart';
         final restricted = ['/rrhh', '/config'];
         // final snap = await FirebaseFirestore.instance.collection('users').doc(user!.uid).get();
         // final role = (snap.data()?['role'] ?? 'operador') as String;
@@ -84,6 +83,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/history',  builder: (_, __) => const HistoryScreen()),
       GoRoute(path: '/scan',     builder: (_, __) => const ScanScreen()),
 
+      //  Detalle de ticket
+      GoRoute(
+        path: '/ticket/:id',
+        builder: (_, state) {
+          final id = state.pathParameters['id']!;
+          return TicketDetailScreen(ticketId: id);
+        },
+      ),
+
       // Detalle / Activa (en Admin/Operador permitimos cerrar -> readOnly:false)
       GoRoute(
         path: '/active',
@@ -105,7 +113,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         },
       ),
 
-      // Pantallas que serán “solo admin” cuando actives la validación
       GoRoute(path: '/rrhh',   builder: (_, __) => const RrhhScreen()),
       GoRoute(path: '/config', builder: (_, __) => const ConfigEstablecimientoScreen()),
 
