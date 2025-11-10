@@ -1,19 +1,16 @@
+// lib/main.dart
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tp3_v2/core/app_router.dart';
-import 'package:tp3_v2/presentation/screens/login_screen.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'core/app_router.dart';
 import 'firebase_options.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-
-  runApp(const ProviderScope(
-    child: MainApp())
-    );
+  runApp(const ProviderScope(child: MainApp()));
 }
 
 class MainApp extends ConsumerWidget {
@@ -21,11 +18,11 @@ class MainApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final router = ref.watch(appRouterProvider);
+    final router = ref.watch(goRouterProvider);
     return MaterialApp.router(
-      title: 'Usuarios Firestore',
-      routerConfig: router,
       debugShowCheckedModeBanner: false,
+      routerConfig: router,
+      theme: ThemeData(useMaterial3: true, colorSchemeSeed: const Color(0xFF0A6CF1)),
     );
   }
 }

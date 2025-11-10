@@ -1,15 +1,18 @@
+// lib/presentation/screens/history_screen.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:tp3_v2/presentation/widgets/app_scaffold.dart';
+import 'package:go_router/go_router.dart';
+import '../widgets/app_scaffold.dart';
 
 class HistoryScreen extends StatelessWidget {
   const HistoryScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Evitamos índice compuesto: ordenamos por egreso y filtramos en memoria.
     final query = FirebaseFirestore.instance
         .collection('tickets')
-        .where('status', isEqualTo: 'closed');
+        .orderBy('egreso', descending: true);
 
     return AppScaffold(
       title: 'Historial',
@@ -19,36 +22,45 @@ class HistoryScreen extends StatelessWidget {
           if (snap.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
-          final all = snap.data?.docs ?? [];
-          if (all.isEmpty) {
-            return const Center(child: Text('Aún no hay tickets finalizados'));
+          if (snap.hasError) {
+            return Center(child: Text('Error: ${snap.error}'));
           }
 
-          final docs = [...all]..sort((a, b) {
-            final ta = (a.data()['ingreso'] as Timestamp).toDate();
-            final tb = (b.data()['ingreso'] as Timestamp).toDate();
-            return tb.compareTo(ta);
-          });
+          final all = snap.data?.docs ?? [];
+          final docs = all.where((d) => (d.data()['status'] ?? '') == 'closed').toList();
+          if (docs.isEmpty) {
+            return const Center(child: Text('No hay tickets finalizados.'));
+          }
 
           return ListView.separated(
+            padding: const EdgeInsets.all(8),
             itemCount: docs.length,
             separatorBuilder: (_, __) => const Divider(height: 0),
             itemBuilder: (context, i) {
-              final d = docs[i].data();
-              final plate = (d['vehiclePlate'] ?? '') as String;
-              final ingreso = (d['ingreso'] as Timestamp).toDate();
-              final egreso = d['egreso'] != null ? (d['egreso'] as Timestamp).toDate() : null;
-              final price = d['precioFinal'];
+              final doc = docs[i];
+              final id = doc.id;
+              final d = doc.data();
+
+              final plate = (d['vehiclePlate'] ?? '') as String? ?? '';
+              final ingresoTs = d['ingreso'];
+              final egresoTs  = d['egreso'];
+              final ingreso = ingresoTs is Timestamp ? ingresoTs.toDate() : null;
+              final egreso  = egresoTs  is Timestamp ? egresoTs.toDate()  : null;
+              final total = (d['precioFinal'] is num) ? (d['precioFinal'] as num).toDouble() : null;
 
               return ListTile(
-                leading: const CircleAvatar(
-                  backgroundColor: Colors.blueAccent,
-                  child: Icon(Icons.receipt_long, color: Colors.white),
-                ),
-                title: Text(plate),
-                subtitle: Text('De ${ingreso.toLocal()} a ${egreso?.toLocal() ?? '-'} • \$${(price ?? 0).toStringAsFixed(2)}'),
+                leading: const CircleAvatar(child: Icon(Icons.receipt_long)),
+                title: Text(plate.isEmpty ? 'Sin patente' : plate),
+                subtitle: Text([
+                  if (ingreso != null) 'Ing: ${_fmtDateTime(ingreso)}',
+                  if (egreso  != null) 'Egr: ${_fmtDateTime(egreso)}',
+                  if (total   != null) 'Total: \$${total.toStringAsFixed(2)}',
+                ].join(' • ')),
+                trailing: const Icon(Icons.chevron_right),
                 onTap: () {
-                  // futuro: comprobante / detalle
+                  // Igual que en Cliente: usamos /ticket/:id
+                  context.push('/ticket/$id');
+                  // (También funcionaría context.push('/ticket', extra: id); por la ruta alternativa)
                 },
               );
             },
@@ -57,4 +69,12 @@ class HistoryScreen extends StatelessWidget {
       ),
     );
   }
+
+  static String _fmtDateTime(DateTime dt) {
+    final d = '${_two(dt.day)}/${_two(dt.month)}/${dt.year}';
+    final t = '${_two(dt.hour)}:${_two(dt.minute)}';
+    return '$d $t';
+  }
+
+  static String _two(int v) => v.toString().padLeft(2, '0');
 }

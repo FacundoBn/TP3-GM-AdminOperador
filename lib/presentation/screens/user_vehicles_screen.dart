@@ -4,7 +4,7 @@ import 'package:tp3_v2/domain/logic/current_user_provider.dart';
 import 'package:tp3_v2/domain/logic/vehicle_provider.dart';
 
 class UserVehiclesScreen extends ConsumerWidget {
-  final String? userUid; // Opcional: si no se pasa, tomamos el currentUser
+  final String? userUid;
 
   const UserVehiclesScreen({super.key, this.userUid});
 
@@ -76,10 +76,7 @@ class UserVehiclesScreen extends ConsumerWidget {
                       v.plate,
                       style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
                     ),
-                    subtitle: Text(
-                      v.tipo.name,
-                      style: theme.textTheme.bodyMedium,
-                    ),
+                    subtitle: Text(v.tipo.name),
                   ),
                 );
               },

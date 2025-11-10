@@ -5,42 +5,83 @@ class AppScaffold extends StatelessWidget {
   final String title;
   final Widget body;
   final List<Widget>? actions;
+  final Widget? floatingActionButton;
 
-  // 🔧 NUEVO: soporta TabBar en el AppBar
+  /// Widget inferior del AppBar (por ej., TabBar)
   final PreferredSizeWidget? bottom;
 
-  // Extras opcionales (por si alguna screen los usa)
-  final Widget? floatingActionButton;
-  final Widget? bottomNavigationBar;
-  final Widget? endDrawer;
-  final Widget? drawer;
+  /// Mostrar/ocultar Drawer (hamburguesa). Por defecto: true.
+  final bool withDrawer;
 
   const AppScaffold({
     super.key,
     required this.title,
     required this.body,
     this.actions,
-    this.bottom,
     this.floatingActionButton,
-    this.bottomNavigationBar,
-    this.endDrawer,
-    this.drawer,
+    this.bottom,
+    this.withDrawer = true,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
+      // ❗️Drawer habilita automáticamente el ícono “hamburguesa” en el AppBar
+      drawer: withDrawer ? const AppDrawer() : null,
+
       appBar: AppBar(
-        title: Text(title),
+        title: Text(
+          title,
+          style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+        ),
         actions: actions,
-        bottom: bottom, // ← ahora sí acepta TabBar/PreferredSizeWidget
+        elevation: 0,
+        bottom: bottom,
       ),
-      // si no te pasan un drawer, usamos el condicional por roles
-      drawer: drawer ?? const AppDrawer(),
-      endDrawer: endDrawer,
-      body: body,
       floatingActionButton: floatingActionButton,
-      bottomNavigationBar: bottomNavigationBar,
+      body: ScrollConfiguration(
+        behavior: const _NoGlowScroll(),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 960), // ancho cómodo en web
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: theme.colorScheme.shadow.withOpacity(0.04),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: body,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
+  }
+}
+
+class _NoGlowScroll extends ScrollBehavior {
+  const _NoGlowScroll();
+
+  @override
+  Widget buildOverscrollIndicator(
+    BuildContext context,
+    Widget child,
+    ScrollableDetails details,
+  ) {
+    return child; // sin glow
   }
 }

@@ -14,7 +14,7 @@ class NewTicketScreen extends ConsumerStatefulWidget {
 }
 
 class _NewTicketScreenState extends ConsumerState<NewTicketScreen> {
-  bool assignUser = false; // controla si se despliega AssignDriverSection
+  bool assignUser = false;
   bool _searching = false;
   bool _confirming = false;
 
@@ -22,7 +22,6 @@ class _NewTicketScreenState extends ConsumerState<NewTicketScreen> {
   Widget build(BuildContext context) {
     final ticketState = ref.watch(newTicketNotifierProvider);
     final theme = Theme.of(context);
-
     final canConfirm = ticketState?.informacionMinima() ?? false;
 
     return AppScaffold(
@@ -31,9 +30,8 @@ class _NewTicketScreenState extends ConsumerState<NewTicketScreen> {
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 720),
           child: ListView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(8),
             children: [
-              // PLACA + BUSCAR
               _SectionCard(
                 icon: Icons.directions_car,
                 title: 'Patente',
@@ -74,7 +72,6 @@ class _NewTicketScreenState extends ConsumerState<NewTicketScreen> {
 
               const SizedBox(height: 12),
 
-              // VEHÍCULO
               if (ticketState?.vehicleId != null)
                 _SectionCard(
                   icon: Icons.local_taxi,
@@ -157,7 +154,6 @@ class _NewTicketScreenState extends ConsumerState<NewTicketScreen> {
 
               const SizedBox(height: 12),
 
-              // ASIGNAR USUARIO (opcional)
               if (assignUser && ticketState != null)
                 _SectionCard(
                   icon: Icons.person_search,
@@ -167,7 +163,6 @@ class _NewTicketScreenState extends ConsumerState<NewTicketScreen> {
 
               const SizedBox(height: 12),
 
-              // USUARIO ASOCIADO (si existe)
               if (ticketState?.userId != null)
                 _SectionCard(
                   icon: Icons.person,
@@ -185,7 +180,6 @@ class _NewTicketScreenState extends ConsumerState<NewTicketScreen> {
 
               const SizedBox(height: 16),
 
-              // ACCIÓN: CONFIRMAR
               Row(
                 children: [
                   Expanded(
@@ -204,11 +198,7 @@ class _NewTicketScreenState extends ConsumerState<NewTicketScreen> {
                                     .confirmIngreso();
 
                                 if (!mounted) return;
-
-                                // limpiar estado
                                 ref.read(newTicketNotifierProvider.notifier).clear();
-
-                                // ir al home
                                 context.go('/home');
                               } catch (e, st) {
                                 debugPrint('Error al confirmar ticket: $e\n$st');
@@ -230,11 +220,13 @@ class _NewTicketScreenState extends ConsumerState<NewTicketScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               if (!canConfirm)
                 Text(
                   'Completá los datos mínimos para habilitar el ingreso.',
-                  style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.tertiary),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.tertiary,
+                  ),
                 ),
             ],
           ),
@@ -244,7 +236,6 @@ class _NewTicketScreenState extends ConsumerState<NewTicketScreen> {
   }
 }
 
-/// Tarjeta seccional reutilizable con icono y título
 class _SectionCard extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -296,7 +287,6 @@ class _SectionCard extends StatelessWidget {
   }
 }
 
-/// Key-Value en una fila
 class _KV extends StatelessWidget {
   final String k;
   final String v;
