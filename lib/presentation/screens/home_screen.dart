@@ -57,6 +57,9 @@ class HomeScreen extends StatelessWidget {
                       final hh = dur.inHours.toString().padLeft(2, '0');
                       final mm = (dur.inMinutes % 60).toString().padLeft(2, '0');
 
+                      final userId = d['userId'] as String?;
+                      final bool assignedUser = userId != null && userId.isNotEmpty;
+
                       return ListTile(
                         leading: const CircleAvatar(
                           backgroundColor: Color(0xFFA5D6A7),
@@ -64,8 +67,36 @@ class HomeScreen extends StatelessWidget {
                         ),
                         title: Text(plate),
                         subtitle: Text('Desde: ${ingreso.toLocal()} • $hh:$mm'),
-                        trailing: const Chip(label: Text('ACTIVO')),
-                        onTap: () => context.go('/active', extra: id),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                           if (!assignedUser)
+                            TextButton(
+                              onPressed: () {
+                                
+                                if (plate != null && plate.isNotEmpty
+                                && id != null && id.isNotEmpty) {
+                                  context.go(
+                                    '/assign',
+                                    extra: {
+                                      'plate': plate,
+                                      'id': id,
+                                    },
+                                  );
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('No se encontró un vehicleId válido')),
+                                  );
+                                }
+                              },
+                              child: const Text('Assign User'),
+                            ),
+                            
+                            const Chip(label: Text('ACTIVO')),
+                          ],
+                        ), 
+                      onTap: () => context.go('/active', extra: id),
+                        
                       );
                     },
                   );

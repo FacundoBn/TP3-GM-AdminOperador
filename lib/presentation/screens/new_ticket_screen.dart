@@ -1,5 +1,3 @@
-import 'dart:js_interop';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -18,6 +16,26 @@ class NewTicketScreen extends ConsumerStatefulWidget {
 class _NewTicketScreenState extends ConsumerState<NewTicketScreen> {
   bool assignUser = false; // controla si se despliega AssignDriverSection
 
+  void _initTicket() async {
+    try {
+      await ref.read(newTicketNotifierProvider.notifier)
+          .startNewTicket(plate: widget.plate, context: context);
+    } catch (e, st) {
+      debugPrint('Error al iniciar ticket: $e\n$st');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al iniciar ticket: $e')),
+      );
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initTicket();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final ticketState = ref.watch(newTicketNotifierProvider);
@@ -28,27 +46,11 @@ class _NewTicketScreenState extends ConsumerState<NewTicketScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
+            
             // 1️⃣ Mostrar placa
             Text('Patente: ${widget.plate}', style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 16),
-
-            // 2️⃣ Botón "Iniciar Ticket / Continuar"
-            ElevatedButton(
-              onPressed: () async {
-                try {
-                  await ref.read(newTicketNotifierProvider.notifier)
-                      .startNewTicket(plate: widget.plate, context: context);
-                } catch (e, st) {
-                  debugPrint('Error al iniciar ticket: $e\n$st');
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error al iniciar ticket: $e')),
-                  );
-                }
-              },
-              child: const Text('BUSCAR'),
-            ),
-            const SizedBox(height: 16),
-
+            const SizedBox(height: 40),
+            
             // 3️⃣ Sección Vehículo
             if (ticketState?.vehicleId != null) ...[
               Text('Vehículo: ${ticketState!.vehicleTipo ?? "-"}'),

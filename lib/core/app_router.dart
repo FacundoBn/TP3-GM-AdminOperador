@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:tp3_v2/presentation/screens/assign_driver_screen.dart';
 
 // Pantallas (ajustá los imports si tu paquete no es tp3_v2)
 import 'package:tp3_v2/presentation/screens/login_screen.dart';
@@ -90,6 +91,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (_, state) {
           final ticketId = state.extra is String ? state.extra as String : null;
           return ActiveSessionScreen(ticketId: ticketId, readOnly: false);
+        },
+      ),
+
+      GoRoute(
+        path: '/assign',
+        builder: (_, state) {
+          final data = state.extra as Map<String , dynamic>;
+          final vehiclePlate = data['plate'] as String;
+          final ticketId = data ['id'] as String;
+          debugPrint('en app_router_ vehiclePlate: $vehiclePlate - ticketId: $ticketId');
+          return AssignDriverScreen(vehiclePlate: vehiclePlate, ticketId: ticketId);
         },
       ),
 

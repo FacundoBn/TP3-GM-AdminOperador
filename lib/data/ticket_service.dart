@@ -42,4 +42,34 @@ class TicketService {
         .toList();
       });    
     }
+
+  Future<void> updateTicket({
+    required String ticketId,
+    required String userId,
+    required String userNombre,
+    required String userApellido,
+    required String userEmail,
+  }) async {
+    try {
+      final ticketRef = _firestore.collection('tickets').doc(ticketId);
+
+      final doc = await ticketRef.get();
+      if (!doc.exists) {
+        throw Exception('Ticket no encontrado');
+      }
+
+      await ticketRef.update({
+        'userId': userId,
+        'userNombre': userNombre,
+        'userApellido': userApellido,
+        'userEmail': userEmail,
+      });
+
+      debugPrint('✅ Ticket $ticketId actualizado con usuario $userId');
+    } catch (e, st) {
+      debugPrint('❌ Error en TicketService.updateTicket: $e\n$st');
+      rethrow;
+    }
+  }
+
 }  
