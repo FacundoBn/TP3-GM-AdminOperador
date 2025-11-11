@@ -1,3 +1,4 @@
+// lib/presentation/screens/new_ticket_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -17,6 +18,29 @@ class _NewTicketScreenState extends ConsumerState<NewTicketScreen> {
   bool assignUser = false;
   bool _searching = false;
   bool _confirming = false;
+
+  // === agregado desde la feature: auto iniciar la búsqueda al entrar ===
+  Future<void> _initTicket() async {
+    try {
+      await ref
+          .read(newTicketNotifierProvider.notifier)
+          .startNewTicket(plate: widget.plate, context: context);
+    } catch (e, st) {
+      debugPrint('Error al iniciar ticket: $e\n$st');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al iniciar ticket: $e')),
+      );
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Ejecuta la búsqueda una vez montada la pantalla.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _initTicket());
+  }
+  // =====================================================================
 
   @override
   Widget build(BuildContext context) {
@@ -57,7 +81,10 @@ class _NewTicketScreenState extends ConsumerState<NewTicketScreen> {
                         },
                   icon: _searching
                       ? const SizedBox(
-                          width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
                       : const Icon(Icons.search),
                   label: Text(_searching ? 'Buscando...' : 'BUSCAR'),
                 ),
@@ -87,9 +114,12 @@ class _NewTicketScreenState extends ConsumerState<NewTicketScreen> {
                         Align(
                           alignment: Alignment.centerLeft,
                           child: OutlinedButton.icon(
-                            onPressed: () => setState(() => assignUser = !assignUser),
+                            onPressed: () =>
+                                setState(() => assignUser = !assignUser),
                             icon: const Icon(Icons.person_add_alt_1),
-                            label: Text(assignUser ? 'Ocultar asignación' : 'Asignar usuario'),
+                            label: Text(assignUser
+                                ? 'Ocultar asignación'
+                                : 'Asignar usuario'),
                           ),
                         ),
                     ],
@@ -104,12 +134,16 @@ class _NewTicketScreenState extends ConsumerState<NewTicketScreen> {
                     children: [
                       Text(
                         'No se encontró un vehículo con esta patente.',
-                        style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
+                        style: theme.textTheme.bodyMedium
+                            ?.copyWith(fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: 8),
                       _KV('Patente', ticketState?.vehiclePlate ?? widget.plate),
                       const SizedBox(height: 12),
-                      Text('Seleccioná el tipo de vehículo:', style: theme.textTheme.labelLarge),
+                      Text(
+                        'Seleccioná el tipo de vehículo:',
+                        style: theme.textTheme.labelLarge,
+                      ),
                       const SizedBox(height: 8),
                       Wrap(
                         spacing: 8,
@@ -118,7 +152,8 @@ class _NewTicketScreenState extends ConsumerState<NewTicketScreen> {
                           for (final tipo in ['auto', 'moto', 'camioneta'])
                             ChoiceChip(
                               label: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 4, vertical: 2),
                                 child: Text(tipo),
                               ),
                               avatar: Icon(
@@ -137,10 +172,13 @@ class _NewTicketScreenState extends ConsumerState<NewTicketScreen> {
                                       .read(newTicketNotifierProvider.notifier)
                                       .registerNewVehicle(tipo);
                                 } catch (e, st) {
-                                  debugPrint('Error al registrar vehículo: $e\n$st');
+                                  debugPrint(
+                                      'Error al registrar vehículo: $e\n$st');
                                   if (mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('Error al registrar vehículo: $e')),
+                                      SnackBar(
+                                          content: Text(
+                                              'Error al registrar vehículo: $e')),
                                     );
                                   }
                                 }
@@ -170,8 +208,11 @@ class _NewTicketScreenState extends ConsumerState<NewTicketScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _KV('Nombre',
-                          '${ticketState!.userNombre ?? "-"} ${ticketState.userApellido ?? "-"}'),
+                      _KV(
+                        'Nombre',
+                        '${ticketState!.userNombre ?? "-"} '
+                        '${ticketState.userApellido ?? "-"}',
+                      ),
                       const SizedBox(height: 6),
                       _KV('Email', ticketState.userEmail ?? '-'),
                     ],
@@ -198,24 +239,35 @@ class _NewTicketScreenState extends ConsumerState<NewTicketScreen> {
                                     .confirmIngreso();
 
                                 if (!mounted) return;
-                                ref.read(newTicketNotifierProvider.notifier).clear();
+                                ref
+                                    .read(newTicketNotifierProvider.notifier)
+                                    .clear();
                                 context.go('/home');
                               } catch (e, st) {
-                                debugPrint('Error al confirmar ticket: $e\n$st');
+                                debugPrint(
+                                    'Error al confirmar ticket: $e\n$st');
                                 if (mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('Error al confirmar ticket: $e')),
+                                    SnackBar(
+                                        content: Text(
+                                            'Error al confirmar ticket: $e')),
                                   );
                                 }
                               } finally {
-                                if (mounted) setState(() => _confirming = false);
+                                if (mounted) {
+                                  setState(() => _confirming = false);
+                                }
                               }
                             },
                       icon: _confirming
                           ? const SizedBox(
-                              width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
                           : const Icon(Icons.check_circle),
-                      label: Text(_confirming ? 'Confirmando...' : 'Confirmar Ingreso'),
+                      label: Text(
+                          _confirming ? 'Confirmando...' : 'Confirmar Ingreso'),
                     ),
                   ),
                 ],
@@ -266,13 +318,15 @@ class _SectionCard extends StatelessWidget {
                 CircleAvatar(
                   radius: 16,
                   backgroundColor: theme.colorScheme.primary.withOpacity(.12),
-                  child: Icon(icon, size: 18, color: theme.colorScheme.primary),
+                  child:
+                      Icon(icon, size: 18, color: theme.colorScheme.primary),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     title,
-                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                    style: theme.textTheme.titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w700),
                   ),
                 ),
                 if (trailing != null) trailing!,
@@ -299,7 +353,11 @@ class _KV extends StatelessWidget {
       children: [
         SizedBox(
           width: 120,
-          child: Text(k, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
+          child: Text(
+            k,
+            style: theme.textTheme.bodyMedium
+                ?.copyWith(fontWeight: FontWeight.w600),
+          ),
         ),
         Expanded(child: Text(v, style: theme.textTheme.bodyMedium)),
       ],

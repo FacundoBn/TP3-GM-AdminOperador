@@ -16,7 +16,8 @@ import '../presentation/screens/mis_datos_screen.dart';
 import '../presentation/screens/rrhh_screen.dart';
 import '../presentation/screens/config_establecimiento_screen.dart';
 import '../presentation/screens/ticket_receipt_screen.dart';
-import '../presentation/screens/new_ticket_screen.dart'; // Asegurate que existe
+import '../presentation/screens/new_ticket_screen.dart';
+import '../presentation/screens/assign_driver_screen.dart';
 
 class GoRouterRefreshStream extends ChangeNotifier {
   GoRouterRefreshStream(Stream<dynamic> stream) {
@@ -66,7 +67,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         },
       ),
 
-      // Comprobante
+      // Comprobante (main)
       GoRoute(
         path: '/ticket/:id',
         builder: (_, state) =>
@@ -78,18 +79,42 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             TicketReceiptScreen(ticketId: (state.extra as String?) ?? ''),
       ),
 
-      // ===== NewTicket: TODAS las variantes soportadas =====
+      // Asignar conductor/cliente desde ticket activo (feature)
+      GoRoute(
+        path: '/assign',
+        builder: (_, state) {
+          final data = state.extra as Map<String, dynamic>?;
+          final vehiclePlate = data?['plate'] as String?;
+          final ticketId = data?['id'] as String?;
+          assert(vehiclePlate != null && ticketId != null,
+              'Para /assign se espera state.extra = { "plate": String, "id": String }');
+          return AssignDriverScreen(
+            vehiclePlate: vehiclePlate ?? '',
+            ticketId: ticketId ?? '',
+          );
+        },
+      ),
+
+      // ===== NewTicket unificado =====
+      // Variante con parámetro en la URL
       GoRoute(
         path: '/newTicket/:plate',
         builder: (_, state) =>
             NewTicketScreen(plate: state.pathParameters['plate'] ?? ''),
       ),
+      // Variante con extra y redirect si falta plate (combina main + feature)
       GoRoute(
         path: '/newTicket',
-        builder: (_, state) =>
-            NewTicketScreen(plate: (state.extra as String?) ?? ''),
+        redirect: (context, state) {
+          final plate = state.extra is String ? state.extra as String : null;
+          return plate == null ? '/scan' : null;
+        },
+        builder: (_, state) {
+          final plate = state.extra as String;
+          return NewTicketScreen(plate: plate);
+        },
       ),
-      // Compat con código viejo
+      // Compat con rutas viejas
       GoRoute(
         path: '/new/:plate',
         builder: (_, state) =>
